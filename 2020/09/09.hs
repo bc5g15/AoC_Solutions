@@ -1,10 +1,10 @@
 import Data.List (inits, tails)
 
 main = do
-    instring <- readFile "test.txt"
+    instring <- readFile "in.txt"
     let inlines = map (\x -> read x::Int) $ lines instring
     -- Part 1
-    let poss = possibilities 5 inlines
+    let poss = possibilities 25 inlines
     let part1 = fst . head. filter (null . snd) $ map (uncurry sums) poss
     print part1
     -- Part 2
