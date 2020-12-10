@@ -7,7 +7,6 @@ main = do
     -- Part 1
     let sorted = sort inlines
     let myDiffs =  1 : diffs sorted -- first jump is always 1
-    print myDiffs
     let [ones, threes] = [length $ filter x myDiffs | x <- [(==3), (==1)]]
     print $ ones * threes
     -- Part 2
