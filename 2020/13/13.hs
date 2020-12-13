@@ -1,5 +1,5 @@
 import Data.List.Split (splitOn)
-import Data.List (minimumBy, maximumBy, (\\))
+import Data.List (minimumBy, (\\))
 
 main = do
     instring <- readFile "in.txt"
@@ -10,25 +10,32 @@ main = do
     let timeDiff = \x -> abs $ mod startTime x-x
     let busTimes = [(x, timeDiff x) | x<-buses]
     let bestTime = minimumBy (\(_, a) (_, b) -> compare a b) busTimes
-    print bestTime
     print $ uncurry (*) bestTime
 
-    -- Part 2
+    -- Part 2 - Modular Multiplicative Inverse edition
     let constraints = zip (splitOn "," $ inlines !! 1) [0..]
-    let conFs = map conF constraints
-    -- -- print $ head . dropWhile (not . all . map ($) conFs) [1..]
-    let step = maximumBy (\(a,_) (b,_) -> compare a b) . map (\(a,b) -> (read a::Int, b)) $ filter (\(a,_) -> a/="x") constraints
-    -- print step
-    let range = \(a, b) -> [x-b | x<-[0, a..]] 
-    -- -- print constraints
-    -- let k = map ($ 1068781) conFs
-    -- -- print k
-    -- -- print $ map ($ 1068781) conFs
-    let check = \x -> map ($ x) conFs
-    print . head $ dropWhile (not . and . check) $ range step
-    -- print constraints
+    let conNums = filter (\(x,_) -> x/="x") constraints
+    let e = map (\(x,y) -> (read x::Int, y)) conNums
+    let mmiVals = map (\(x,y) -> (x, mod (x-y) x)) e
+    print $ solveMMI mmiVals
 
-conF :: (String, Int) -> (Int -> Bool)
-conF ("x", _) _ = True
-conF (a, i) x = mod (x+i) n == 0
-    where n = read a::Int
+mypow :: Int -> Int -> Int -> Int
+mypow _ 0 _ = 1
+mypow x y m
+    | even y = r
+    | otherwise = mod (x * r) m
+    where 
+        p = mod (mypow x (div y 2) m) m
+        r = mod (p*p) m
+
+modInverse :: Int -> Int -> Int
+modInverse a m = mypow a (m-2) m
+
+solveMMI :: [(Int, Int)] -> Int
+solveMMI xs = mod (sum 
+    [modInverse (product (map fst xs \\ [x])) x 
+    * product (map fst xs \\ [x]) * y| (x, y)<-full])
+    lcm 
+        where 
+            full = filter ((/=0) .snd) xs
+            lcm = product $ map fst xs
