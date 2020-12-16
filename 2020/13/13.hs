@@ -13,6 +13,7 @@ main = do
     print $ uncurry (*) bestTime
 
     -- Part 2 - Modular Multiplicative Inverse edition
+    -- Linear Congruence
     let constraints = zip (splitOn "," $ inlines !! 1) [0..]
     let conNums = filter (\(x,_) -> x/="x") constraints
     let e = map (\(x,y) -> (read x::Int, y)) conNums
