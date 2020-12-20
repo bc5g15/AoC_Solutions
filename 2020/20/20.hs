@@ -18,7 +18,8 @@ main = do
     let puzString = joinPuzzle puzzle
 
     let flips = [id, reverse, map reverse, reverse . map reverse]
-    let turns = [id, reverse.transpose, reverse.transpose.reverse.transpose, reverse.transpose.reverse.transpose.reverse.transpose]
+    let turn = reverse.transpose
+    let turns = [id, turn, turn.turn, turn.turn.turn]
 
     let transforms = [x . y | x<-flips, y<-turns]
     let monsters = map (\f -> f monStr) transforms
