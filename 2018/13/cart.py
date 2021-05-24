@@ -73,42 +73,55 @@ def turn_dir(c, j):
     jr = (j+1) % 3
     return (result, jr)
 
-def tick(grid, carts):
+def tick(grid, carts, partTwo = False):
     # Check which carts go first
     carts.sort(key=lambda x: x[0])
     carts.sort(key=lambda y: y[1])
 
-    # print(carts)
     # Move them in turn, check for collisions
     for i in range(len(carts)):
+        if carts[i] == None:
+            continue
         (x, y, c, j) = carts[i]
         # Swap direction if at junction
         if grid[(x, y)] == '+':
             (c, j) = turn_dir(c, j)
-            # c = c2
-            # j = j2
         elif grid[(x, y)] in CORNERS:
             c = TURN_ORDER[(c, grid[(x, y)])]
 
         (dx, dy) = MOVEMENT_DIR[c]
         x = x + dx
         y = y + dy
-        # print( c, j)
         # Check for collision
+        collider = (False, None)
         for k in range(len(carts)):
+            if carts[k] == None:
+                continue
             (a, b, _, _) = carts[k]
             if (a,b) == (x, y):
-                return (True, x, y)
-
-        carts[i] = (x, y, c, j)
+                if partTwo:
+                    collider = (True, k)
+                    pass
+                else:
+                    return (True, x, y)
+        if collider[0]:
+            carts[i] = None
+            carts[collider[1]] = None 
+        else:
+            carts[i] = (x, y, c, j)
     
+    carts = [x for x in carts if x != None]
+
+    if partTwo and len(carts) == 1:
+        return (True, carts[0][0], carts[0][1])
+
     return (False, grid, carts)
     
-def full_run(grid, carts):
+def full_run(grid, carts, partTwo=False):
     crash = False
     while not crash:
-        (crash, grid, carts) = tick(grid, carts)
+        (crash, grid, carts) = tick(grid, carts, partTwo)
     print((grid, carts))
 
 (grid, carts) = read_data('in.txt')
-full_run(grid, carts)
+full_run(grid, carts, partTwo=True)
