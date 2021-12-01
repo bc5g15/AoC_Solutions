@@ -43,37 +43,25 @@ const drawLines = (root, points) => {
     svg.setAttribute('height', maxY-minY)
     svg.setAttribute('width', maxX-minX)
 
-    for (let i = 1; i < points.length; i++) {
-        const [x1, y1] = points[i-1]
-        const [x2, y2] = points[i]
+    const adjustedPoints = points.map(([x, y]) => [x-minX, y-minY])
+    const polyPoints = adjustedPoints.map(i => i.join(' ')).join(' ')
 
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-        line.setAttribute('x1', x1-minX)
-        line.setAttribute('x2', x2-minX)
-        line.setAttribute('y1', y1-minY)
-        line.setAttribute('y2', y2-minY)
-        line.style.stroke = 'red'
-        line.style.strokeWidth = 1
-        line.style.strokeLinecap = 'round'
-        svg.append(line)
-    }
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
+    line.setAttribute('points', polyPoints)
+    line.style.stroke = 'red'
+    line.style.strokeWidth = 1
+    line.style.strokeLinecap = 'round'
+    line.style.strokeLinejoin='bevel'
+    svg.append(line)
 
     root.appendChild(svg)
 }
 
 solveBtn.onclick = () => {
-    const depths = puzzleInput.value.split('\n').map(i => parseInt(i.trim(), 10))
+    const depths = puzzleInput.value.trim().split('\n').map(i => parseInt(i.trim(), 10))
 
     // Count number of times a measurement increases
-    let count = 0;
-    for (let i = 1; i < depths.length; i++) {
-        const prev = depths[i-1]
-        const now = depths[i]
-        if (prev < now) {
-            count++
-        }
-    }
-
+    let count = measureIncreases(depths)
     solution.innerText = count
 
     // Part 2
@@ -86,7 +74,7 @@ solveBtn.onclick = () => {
 
     const count2 = measureIncreases(windows)
 
-    solution.innerText += `\t new: ${count2}`
+    solution.innerText += `\t Window Increases: ${count2}`
 
     // Visualise it!
     emptyNode(visual)
