@@ -40,11 +40,6 @@ const addStop = (root, offset, colour) => {
  * @param {[number, number][]} points 
  */
 const drawLines = (svg, points) => {
-    // const [minX, minY, maxX, maxY] = getCorners(points)
-    // const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    // svg.setAttribute('height', maxY)
-    // svg.setAttribute('width', maxX)
-
     // Create a gradient for a more interesting colour
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
     const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient')
@@ -55,10 +50,7 @@ const drawLines = (svg, points) => {
     addStop(grad, '50%', 'hsl(180, 100%, 50%')
     addStop(grad, '75%', 'hsl(270, 100%, 50%')
     addStop(grad, '100%', 'hsl(360, 100%, 50%')
-    
     svg.append(defs)
-    // const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
-    // stop1.setAttribute('offset', '0%')
 
     const polyPoints = points.map(i => i.join(' ')).join(' ')
 
