@@ -3,11 +3,18 @@ const solveBtn = document.getElementById('solvepuzzle')
 const solution = document.getElementById('solutionoutput')
 const visual = document.getElementById('visual')
 
+/** @param {Node} elem */
+const emptyNode = (elem) => {
+    while (elem.firstChild) {
+        elem.removeChild(elem.firstChild)
+    }
+}
+
 /**
  * 
  * @param {string[]} arr 
  * @param {boolean} most 
- * @returns 
+ * @returns {string}
  */
 const significantReduce = (arr, most = true) => {
     let curArr = Array(...arr)
@@ -20,6 +27,41 @@ const significantReduce = (arr, most = true) => {
         index++
     }
     return curArr[0]
+}
+
+const displayBlocks = (value, bgcolour, title) => {
+    const chars = value.split('')
+    const container = document.createElement('div')
+    container.style.fontSize = 'x-large'
+    container.style.fontFamily = 'monospace'
+
+    const titleblock = document.createElement('span')
+    titleblock.innerText = title
+    
+    chars.map((v, i) => {
+        const block = document.createElement('div')
+        block.style.outline = '.1em solid'
+        block.style.backgroundColor = bgcolour
+        block.style.display = 'inline-flex'
+        block.style.justifyContent = 'center'
+        block.style.textAlign = 'center'
+        block.style.height = '1em'
+        block.style.width = '1em'
+        const text = document.createElement('div')
+        text.innerText = v
+        
+        container.append(block)
+        block.append(text)
+        
+        text.animate([
+            {opacity: '0%'},
+            {opacity: '100%'}
+        ], {
+            duration: 100 * (i + 1)
+        })
+    })
+    container.append(titleblock)
+    return container
 }
 
 solveBtn.onclick = () => {
@@ -42,5 +84,12 @@ solveBtn.onclick = () => {
 
     solution.innerText += `\nO2: ${o2}, CO2: ${co2}, SR: ${parseInt(o2,2)*parseInt(co2,2)}`
     
-
+    // Visualise, somehow
+    emptyNode(visual)
+    visual.style.margin = '1em'
+    visual.append(displayBlocks(g, 'green', ' G'))
+    visual.append(displayBlocks(e, 'goldenrod', ' E'))
+    visual.append(displayBlocks(o2, 'blue', ' O2'))
+    visual.append(displayBlocks(co2, 'red', ' CO2'))
+    
 }
