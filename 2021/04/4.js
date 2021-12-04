@@ -10,6 +10,42 @@ const emptyNode = (elem) => {
     }
 }
 
+const makeBingoBoard = ({valueIndex, filled, finalScore}) => {
+    const container = document.createElement('div')
+    container.style.border = '.2em solid red'
+    container.style.width = 'fit-content'
+    const titleBar = document.createElement('div')
+    titleBar.innerText = `Final Score: ${finalScore}`
+    container.append(titleBar)
+
+    const bingoGrid = document.createElement('div')
+    bingoGrid.style.display = 'grid'
+    bingoGrid.style.gridTemplateColumns = 'repeat(5, 1fr)'
+    bingoGrid.style.gridTemplateRows = 'repeat(5, 1fr)'
+    bingoGrid.style.width = '10em'
+    container.append(bingoGrid)
+
+    for (let key in valueIndex) {
+        const [x, y] = valueIndex[key]
+        console.log(x, y)
+        const cell = document.createElement('div')
+        cell.style.outline = '1px solid white'
+        cell.style.gridColumn = x+1
+        cell.style.gridRow = y+1
+        cell.style.width = '2em'
+        cell.style.height = '2em'
+        const colour = filled.xs?.[x]?.has(y) ? 'lime' : 'white'
+        cell.style.color = colour
+        cell.innerText = key
+        cell.style.textAlign = 'center'
+        cell.style.margin = 'auto'
+        cell.style.lineHeight = '2em'
+        bingoGrid.append(cell)
+    }
+    return container
+}
+
+
 const checkForWin = (filled) => {
     for (let i = 0; i < 5; i++) {
         if (filled.xs[i]?.size === 5 || filled.ys[i]?.size === 5) {
@@ -90,8 +126,17 @@ solveBtn.onclick = () => {
         })
     }
     
-    const firstWin = wonBoards.shift()
-    const lastWin = wonBoards.pop()
+    const firstWin = wonBoards[0]
+    const lastWin = wonBoards[wonBoards.length-1]
     
     solution.innerText = `First Final Score: ${firstWin.finalScore} \nLast Final Score: ${lastWin.finalScore}`
+
+    // Visualise
+    emptyNode(visual)
+    const container = document.createElement('div')
+    container.style.gridTemplateColumns = 'repeat(4, 1fr)'
+    container.style.display = 'grid'
+    container.style.gridGap = '1em'
+    visual.append(container)
+    container.append(...wonBoards.map(i => makeBingoBoard(i)))
 }
