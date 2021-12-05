@@ -4,12 +4,58 @@ const solution = document.getElementById('solutionoutput')
 const visual = document.getElementById('visual')
 
 const stringify = (x, y) => `${x},${y}`
+const destringify = (s) => s.split(',').map(i => parseInt(i, 10))
 
 /** @param {Node} elem */
 const emptyNode = (elem) => {
     while (elem.firstChild) {
         elem.removeChild(elem.firstChild)
     }
+}
+
+/** @param {[number, number][]} points */
+const getCorners = (points) => {
+    const xs = points.map(([x,_]) => x)
+    const ys = points.map(([_,y]) => y)
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+    return {minX, minY, maxX, maxY}
+}
+
+const ventGrid = (ventMap) => {
+    const coords = Object.keys(ventMap).map(destringify)
+    const {minX, minY, maxX, maxY} = getCorners(coords)
+    const width = maxX - minX
+    const height = maxY - minY
+
+    const grid = document.createElement('div')
+    grid.style.display = 'grid'
+    grid.style.gridAutoColumns = `repeat(${width}, 1em)`
+    grid.style.gridTemplateRows = `repeat(${height}, 1em)`
+    grid.style.width = `${width}em`
+    grid.style.height = `${height}em`
+
+    const colours = ['black', 'green', 'orange', 'red']
+
+    coords.forEach(([x, y]) => {
+        const count = ventMap[stringify(x,y)]
+        const cell = document.createElement('div')
+        cell.style.width = '1em'
+        cell.style.height = '1em'
+        cell.style.lineHeight = '1em'
+        cell.style.textAlign = 'center'
+        cell.style.border = '.1em solid white'
+        cell.style.color = 'black'
+        cell.style.backgroundColor = colours[Math.min(3, Math.max(0, count))]
+        cell.innerText = count
+        cell.style.gridColumn = x
+        cell.style.gridRow = y
+        grid.append(cell)
+    })
+
+    return grid
 }
 
 const getOrDefault = (obj, key, defaultValue) => obj[key] ?? defaultValue
@@ -61,4 +107,9 @@ solveBtn.onclick = () => {
     const part2 = Object.keys(ventMap).filter(k => ventMap[k] > 1).length
 
     solution.innerText = `${part1} ${part2}`
+
+    // Visualisation
+    emptyNode(visual)
+    const grid = ventGrid(ventMap)
+    visual.append(grid)
 }
