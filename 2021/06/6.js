@@ -3,6 +3,42 @@ const solveBtn = document.getElementById('solvepuzzle')
 const solution = document.getElementById('solutionoutput')
 const visual = document.getElementById('visual')
 
+/** @param {Node} elem */
+const emptyNode = (elem) => {
+    while (elem.firstChild) {
+        elem.removeChild(elem.firstChild)
+    }
+}
+
+const displayElem = () => {
+    const root = document.createElement('div')
+    root.style.width = '50vw'
+
+    const textLine = document.createElement('div')
+    textLine.innerText = 'After 0 Days:'
+
+    const numberLine = document.createElement('div')
+    numberLine.style.width = '100%'
+    numberLine.style.fontSize = 'x-large'
+    numberLine.style.textAlign = 'right'
+    numberLine.innerText = '0'
+
+    root.append(textLine, numberLine)
+    return {root, textLine, numberLine}
+}
+
+const animateUpdate = (startArr, {textLine, numberLine}) => {
+    let foreverFish = startArr
+    let day = 0
+    setInterval(() => {
+        day++
+        foreverFish = nextDay(foreverFish)
+        numberLine.innerText = sum(foreverFish)
+        textLine.innerText = `After ${day} days:`
+    },
+    500)
+}
+
 const newFish = 8
 const oldFish = 6
 
@@ -31,12 +67,18 @@ solveBtn.onclick = () => {
     for (let i = 0; i<80; i++) {
         nowFish = nextDay(nowFish)
     }
-    solution.innerText += `\n80 Days: ${sum(nowFish)}`
+    solution.innerText = `\n80 Days: ${sum(nowFish)}`
 
     let tooManyFish = atDayOne
     for (let i = 0; i<256; i++) {
         tooManyFish = nextDay(tooManyFish)
     }
     solution.innerText += `\n256 Days: ${sum(tooManyFish)}`
+
+    // Visualise
+    emptyNode(visual)
+    const display = displayElem()
+    visual.append(display.root)
+    animateUpdate(atDayOne, display)
 
 }
