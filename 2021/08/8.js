@@ -3,35 +3,6 @@ const solveBtn = document.getElementById('solvepuzzle')
 const solution = document.getElementById('solutionoutput')
 const visual = document.getElementById('visual')
 
-// acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab cdfeb fcadb cdfeb cdbaf
-
-/*
-be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe
-edbfga begcd cbg gc gcadebf fbgde acbgfd abcde gfcbed gfec | fcgedb cgb dgebacf gc
-fgaebd cg bdaec gdafb agbcfd gdcbef bgcad gfac gcb cdgabef | cg cg fdcagb cbg
-fbegcd cbd adcefb dageb afcb bc aefdc ecdab fgdeca fcdbega | efabcd cedba gadfec cb
-aecbfdg fbg gf bafeg dbefa fcge gcbea fcaegb dgceab fcbdga | gecf egdcabf bgf bfgea
-fgeab ca afcebg bdacfeg cfaedg gcfdb baec bfadeg bafgc acf | gebdcfa ecba ca fadegcb
-dbcfg fgd bdegcaf fgec aegbdf ecdfab fbedc dacgb gdcebf gf | cefg dcbef fcge gbcadfe
-bdfegc cbegaf gecbf dfcage bdacg ed bedf ced adcbefg gebcd | ed bcgafe cdgba cbgef
-egadfb cdbfeg cegd fecab cgb gbdefca cg fgcdab egfdb bfceg | gbdfcae bgc cg cgb
-gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
-*/
-
-// top, left, right, middle, left, right, bottom
-const digitCodes = {
-    '1110111': 0, 
-    '0010010': 1, 
-    '1011101': 2, 
-    '1011011': 3, 
-    '0111010': 4, 
-    '1101011': 5, 
-    '1101111': 6, 
-    '1010010': 7, 
-    '1111111': 8, 
-    '1111011': 9  
-}
-
 function difference(setA, setB) {
     let _difference = new Set(setA)
     for (let elem of setB) {
@@ -40,16 +11,64 @@ function difference(setA, setB) {
     return _difference
 }
 
-const findKnownValues = (codes) => {
-    const charsets = codes.map(v => new Set(v))
-    const findCode = (l) => charsets.filter(s => s.size === l)
-    const one = findCode(2)
-    const seven = findCode(3)
-    const four = findCode(4)
-    const eight = findCode(7)
+function symmetricDifference(setA, setB) {
+    let _difference = new Set(setA)
+    for (let elem of setB) {
+        if (_difference.has(elem)) {
+            _difference.delete(elem)
+        } else {
+            _difference.add(elem)
+        }
+    }
+    return _difference
+}
 
-    // Get top segment
-    const topChar = [...difference(one, seven)][0]
+function union(setA, setB) {
+    let _union = new Set(setA)
+    for (let elem of setB) {
+        _union.add(elem)
+    }
+    return _union
+}
+
+
+/**
+ * @param {string[]} codes 
+ */
+const findKnownValues = (codes) => {
+    const charsets = codes.map(v => [v, new Set(v)])
+    const findByLength = (l) => charsets.find(([_, s]) => s.size === l)
+
+    const one = findByLength(2)
+    const seven = findByLength(3)
+    const four = findByLength(4)
+    const eight = findByLength(7)
+
+    const findSetDiff = (choices, subtractor, size) => choices.find(([_,s]) => difference(s, subtractor[1]).size === size)
+    const p235 = charsets.filter(([v, _]) => v.length === 5)
+    const three = findSetDiff(p235, seven, 2)
+
+    const p096 = charsets.filter(([v,_]) => v.length === 6)
+    const nine = findSetDiff(p096, four, 2)
+    const two = findSetDiff(p235, nine, 1)
+    const six = findSetDiff(p096, one, 5)
+
+    const five = p235.find(([v,_]) => ![two[0], three[0]].includes(v))
+    const zero = p096.find(([v,_]) => ![six[0], nine[0]].includes(v))
+
+    const results = [zero,one,two,three,four,five,six,seven,eight,nine]
+    return results.map(([_v, s], i) => [s, i])
+}
+
+const deduce = ([chars, output]) => {
+    const charMap = findKnownValues(chars)
+    console.log(charMap)
+    console.log(chars)
+    console.log(output)
+    return output.map(v => {
+        const vset = new Set(v)
+        return charMap.find(([s,_]) => symmetricDifference(s,vset).size === 0)[1]
+    })
 }
 
 solveBtn.onclick = () => {
@@ -61,5 +80,7 @@ solveBtn.onclick = () => {
 
     solution.innerText = `1, 4, 7 or 8 output values: ${check1478}`
 
-
+    const values = codes.map(v => parseInt(deduce(v).join('')))
+    const finalSum = values.reduce((acc, cur) => acc + cur, 0)
+    solution.innerText += `\nOutput Sum: ${finalSum}`
 }
