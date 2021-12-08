@@ -3,6 +3,79 @@ const solveBtn = document.getElementById('solvepuzzle')
 const solution = document.getElementById('solutionoutput')
 const visual = document.getElementById('visual')
 
+/** @param {Node} elem */
+const emptyNode = (elem) => {
+    while (elem.firstChild) {
+        elem.removeChild(elem.firstChild)
+    }
+}
+
+const visualRatio = 3
+
+const makeBit = (width, height, left, top) => {
+    const bit = document.createElement('div')
+    bit.style.width = width
+    bit.style.height = height
+    bit.style.left = left
+    bit.style.top = top
+    bit.style.backgroundColor = 'white'
+    bit.style.position = 'absolute'
+    return bit
+}
+
+const makeCell = (cellString) => {
+
+    const root = document.createElement('div')
+    root.style.position = 'relative'
+    root.style.width = `${visualRatio+2}em`
+    root.style.height = `${visualRatio*2+3}em`
+    root.style.margin = '1em'
+
+    const vrString = `${visualRatio}em`
+    const midString = `${1+visualRatio}em`
+    const blr = `${2+visualRatio}em`
+    const bottomString = `${2+(2*visualRatio)}em`
+
+    const qm = (width, height, left, top) => root.append(makeBit(width, height, left, top))
+
+    if (cellString.includes('a')) qm(vrString, '1em', '1em', '0')
+    if (cellString.includes('b')) qm('1em', vrString, '0', '1em')
+    if (cellString.includes('c')) qm('1em', vrString, `${1+visualRatio}em`, '1em')
+    if (cellString.includes('d')) qm(vrString, '1em', '1em', midString)
+    if (cellString.includes('e')) qm('1em', vrString, '0', blr)
+    if (cellString.includes('f')) qm('1em', vrString, midString, blr)
+    if (cellString.includes('g')) qm(vrString, '1em', '1em', bottomString)
+    
+    return root
+}
+
+// acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf
+
+const makeDisplay = ([chars, output]) => {
+    const container = document.createElement('div')
+    container.style.display = 'flex'
+    container.append(...chars.map(v => makeCell(v)))
+
+    const blocker = document.createElement('div')
+    blocker.style.height = `${visualRatio*2+3}em`
+    blocker.style.width = '1em'
+    blocker.style.backgroundColor = 'white'
+    blocker.style.margin = '.5em'
+    container.append(blocker)
+
+    container.append(...output.map(v => makeCell(v)))
+
+    return container
+}
+
+const manyDisplays = (displayList) => {
+    const container = document.createElement('div')
+    container.style.display = 'flex'
+    container.style.flexDirection = 'column'
+    container.append(...displayList.map(v => makeDisplay(v)))
+    return container
+}
+
 function difference(setA, setB) {
     let _difference = new Set(setA)
     for (let elem of setB) {
@@ -62,9 +135,6 @@ const findKnownValues = (codes) => {
 
 const deduce = ([chars, output]) => {
     const charMap = findKnownValues(chars)
-    console.log(charMap)
-    console.log(chars)
-    console.log(output)
     return output.map(v => {
         const vset = new Set(v)
         return charMap.find(([s,_]) => symmetricDifference(s,vset).size === 0)[1]
@@ -72,9 +142,7 @@ const deduce = ([chars, output]) => {
 }
 
 solveBtn.onclick = () => {
-    // Separate this out for the visualisation
     const codes = puzzleInput.value.trim().split('\n').map(v => v.split(' | ').map(w => w.split(' ')))
-    
 
     const check1478 = codes.flatMap(([_, b]) => b).filter(v => [2,4,3,7].includes(v.length)).length
 
@@ -83,4 +151,8 @@ solveBtn.onclick = () => {
     const values = codes.map(v => parseInt(deduce(v).join('')))
     const finalSum = values.reduce((acc, cur) => acc + cur, 0)
     solution.innerText += `\nOutput Sum: ${finalSum}`
+
+    // Visualise
+    emptyNode(visual)
+    visual.append(manyDisplays(codes))
 }
