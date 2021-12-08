@@ -80,7 +80,6 @@ const myRange = ([x1, y1], [x2, y2])  => {
 }
 
 solveBtn.onclick = () => {
-    /** @type {string[]} bins */
     const points = puzzleInput.value.trim().split('\n').map(i => i.split(' -> ').map(j => j.split(',').map(k => parseInt(k, 10))))
 
     const hvlines = points.filter(([a, b]) => !isDiagonal(a, b))
