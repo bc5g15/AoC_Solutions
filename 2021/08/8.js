@@ -32,7 +32,25 @@ const digitCodes = {
     '1111011': 9  
 }
 
-// const mapByKnownDigits = ()
+function difference(setA, setB) {
+    let _difference = new Set(setA)
+    for (let elem of setB) {
+        _difference.delete(elem)
+    }
+    return _difference
+}
+
+const findKnownValues = (codes) => {
+    const charsets = codes.map(v => new Set(v))
+    const findCode = (l) => charsets.filter(s => s.size === l)
+    const one = findCode(2)
+    const seven = findCode(3)
+    const four = findCode(4)
+    const eight = findCode(7)
+
+    // Get top segment
+    const topChar = [...difference(one, seven)][0]
+}
 
 solveBtn.onclick = () => {
     // Separate this out for the visualisation
