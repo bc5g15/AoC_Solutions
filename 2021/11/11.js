@@ -60,6 +60,46 @@ const displaySquids = (squids) => {
 /**
  * @param {number[][]} squids 
  */
+const initDisplay = (squids) => {
+    const container = document.createElement('div')
+    const height = squids.length
+    const width = squids[0].length
+    
+    container.style.display = 'grid'
+    container.style.gridTemplateRows = `repeat(${width}, 1em)`
+    container.style.gridTemplateColumns = `repeat(${height}, 1em)`
+    container.style.width = 'fit-content'
+    container.style.margin = '1em'
+
+    const cellMap = {}
+    container.append(...squids.flatMap((arr, y) => arr.map((v, x) => {
+        const cell = document.createElement('div')
+        cell.style.gridRow = y+1
+        cell.style.gridColumn = x+1
+        cell.style.width = '100%'
+        cell.style.height = '100%'
+        cellMap[stringify(x, y)] = cell
+        cell.style.backgroundColor = 'black'
+        return cell
+    })))
+
+    return {container, cellMap}
+}
+
+const animateSquids = (squids, cellMap) => {
+    let mySquids = squids
+    window.setInterval(() => {
+        mySquids.forEach((arr, y) => arr.forEach((v, x) => {
+            const cell = cellMap[stringify(x,y)]
+            cell.style.backgroundColor = v === 0 ? 'hsl(0, 0%, 80%)' : `hsl(0,0%,${(v-1) * 7}%)`
+        }))
+        mySquids = step({squids: mySquids, flashes: 0}).squids
+    }, 50)
+}
+
+/**
+ * @param {number[][]} squids 
+ */
 const step = ({squids, flashes}) => {
 
     let newSquids = squids.map(arr => arr.map(v => v))
@@ -67,8 +107,6 @@ const step = ({squids, flashes}) => {
     const checkThese = newSquids.flatMap((v, i) => v.map((_, j) => [j, i]))
 
     let newFlashes = 0
-
-    console.log(checkThese)
 
     while (checkThese.length > 0) {
         const cur = checkThese.pop()
@@ -99,9 +137,6 @@ solveBtn.onclick = () => {
     squids.forEach((arr, i) => arr.forEach((v, j) => squidMap[stringify(j, i)] = v))
 
     let state = {squids, flashes: 0}
-    // step(squids)
-    console.log(squids)
-    console.log(step(state))
 
     emptyNode(visual)
     visual.append(displaySquids(squids))
@@ -114,15 +149,17 @@ solveBtn.onclick = () => {
         state = step(state)
         sync = state.sync
         if (x === 100) at100 = state.flashes
-        // visual.append(displaySquids(state.squids))
     }
 
     const {squids: finalSquids, flashes} = state
 
     visual.append(displaySquids(finalSquids))
-
     solution.innerText = `Flashes after 100 steps: ${at100}`
-
     solution.innerText += `\nSynchronized after ${x} steps with ${flashes} flashes`
+
+    // Do a proper visualisation
+    const {container, cellMap} = initDisplay(squids)
+    visual.append(container)
+    animateSquids(squids, cellMap)
 
 }
