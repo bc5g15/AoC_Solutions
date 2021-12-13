@@ -23,6 +23,7 @@ const displayPoints = (points) => {
     container.style.gridTemplateColumns = `repeat(${maxX+1}, 1em)`
     container.style.gridTemplateRows = `repeat(${maxY+1}, 1em)`
     container.style.border = '.5em solid blue'
+    container.style.width = 'fit-content'
 
     const cells = squares.map(([x, y]) => {
         const cell = document.createElement('div')
