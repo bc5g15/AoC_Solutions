@@ -10,6 +10,36 @@ const emptyNode = (elem) => {
     }
 }
 
+const displayPairs = (pairs) => {
+    const container = document.createElement('div')
+    container.style.display = 'grid'
+    container.style.gridTemplateColumns = '1fr 5fr'
+    container.style.width = 'fit-content'
+    container.style.fontFamily = 'monospace'
+    container.style.fontWeight = 'bold'
+    container.style.margin = '1em'
+
+    let i = 0
+    for (let key in pairs) {
+        const value = pairs[key]
+        i++
+        const textDiv = document.createElement('div')
+        textDiv.style.gridRow = i
+        textDiv.style.gridColumn = 1
+        textDiv.innerText = key
+        
+        const valueDiv = document.createElement('div')
+        valueDiv.style.gridRow = i
+        valueDiv.style.gridColumn = 2
+        valueDiv.style.textAlign = 'right'
+        valueDiv.innerText = value
+        
+        container.append(textDiv, valueDiv)
+    }
+
+    return container
+}
+
 const getPairs = (template) => {
     const pairs = {}
     const addOrInc = (l) => {
@@ -144,4 +174,7 @@ solveBtn.onclick = () => {
 
     solution.innerText += `\nPart 2: ${maxLetter[1] - minLetter[1]}`
     
+    // Lazy Visualisation
+    emptyNode(visual)
+    visual.append(displayPairs(pairs))
 }
