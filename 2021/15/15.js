@@ -24,7 +24,7 @@ const displayMaze = (maze, path) => {
     container.style.gridTemplateColumns = `repeat(${width}, 1em)`
     container.style.margin = '1em'
 
-    const cells = maze.flatMap((arr, y) => arr.flatMap((v, x) => {
+    maze.forEach((arr, y) => arr.forEach((v, x) => {
         const cell = document.createElement('div')
         cell.innerText = v
         cell.style.gridRow = y+1
@@ -33,9 +33,8 @@ const displayMaze = (maze, path) => {
         const pathNode = path.has(stringify(x,y))
         cell.style.color = pathNode ? 'black' : 'white'
         cell.style.backgroundColor = pathNode ? 'white' : 'black'
-        return cell
+        container.append(cell)
     }))
-    container.append(...cells)
     return container
 }
 
@@ -114,7 +113,6 @@ solveBtn.onclick = () => {
     const [bigPath, bigSteps] = findPath(bigMaze, bigTargetX, bigTargetY)
     solution.innerText += `\nBig Path Value: ${bigPath}`
 
-    // console.log(nodes)
     // Visualise for debug
     emptyNode(visual)
     visual.append(displayMaze(maze, smallSteps))
