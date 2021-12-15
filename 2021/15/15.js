@@ -15,19 +15,24 @@ const emptyNode = (elem) => {
 /**
  * @param {[[number]]} maze 
  */
-const displayMaze = (maze) => {
+const displayMaze = (maze, path) => {
     const container = document.createElement('div')
     container.style.display = 'grid'
     const height = maze.length
     const width = maze[0].length
     container.style.gridTemplateRows = `repeat(${height}, 1em)`
     container.style.gridTemplateColumns = `repeat(${width}, 1em)`
+    container.style.margin = '1em'
 
     const cells = maze.flatMap((arr, y) => arr.flatMap((v, x) => {
         const cell = document.createElement('div')
         cell.innerText = v
         cell.style.gridRow = y+1
         cell.style.gridColumn = x+1
+        cell.style.textAlign = 'center'
+        const pathNode = path.has(stringify(x,y))
+        cell.style.color = pathNode ? 'black' : 'white'
+        cell.style.backgroundColor = pathNode ? 'white' : 'black'
         return cell
     }))
     container.append(...cells)
@@ -48,19 +53,19 @@ const findPath = (maze, targetX, targetY) => {
     const startX = 0
     const startY = 0
 
-    const nodes = [[startX, startY, 0, targetX + targetY]]
+    const nodes = [[startX, startY, 0, targetX + targetY, new Set()]]
     let solved = false
 
     const seen = new Set()
 
     while (!solved) {
-        const [x, y, score] = nodes.shift()
+        const [x, y, score, rank, path] = nodes.shift()
         if (seen.has(stringify(x,y))) continue
         seen.add(stringify(x,y))
-        if (x === targetX && y === targetY) return score
+        if (x === targetX && y === targetY) return [score, path]
         checkAdjacent(maze, x, y).forEach(([a, b, s]) => {
             if (!seen.has(stringify(a,b))) {
-                nodes.push([a, b, score+s, (targetX-a) + (targetY-b)])
+                nodes.push([a, b, score+s, (targetX-a) + (targetY-b), new Set(path).add(stringify(x,y))])
             }
         })
         nodes.sort(([_x,_y,a, r1], [_x2, _y2, b,r2]) => (a+r1)-(b+r2))
@@ -97,7 +102,7 @@ solveBtn.onclick = () => {
     const targetY = maze.length-1
     const targetX = maze[0].length-1
 
-    const pathLength = findPath(maze, targetX, targetY)
+    const [pathLength, smallSteps] = findPath(maze, targetX, targetY)
 
     solution.innerText = `Path value: ${pathLength}`
 
@@ -106,11 +111,12 @@ solveBtn.onclick = () => {
     const bigTargetX = bigMaze[0].length-1
     const bigTargetY = bigMaze.length-1
 
-    const bigPath = findPath(bigMaze, bigTargetX, bigTargetY)
+    const [bigPath, bigSteps] = findPath(bigMaze, bigTargetX, bigTargetY)
     solution.innerText += `\nBig Path Value: ${bigPath}`
 
+    // console.log(nodes)
     // Visualise for debug
     emptyNode(visual)
-    visual.append(displayMaze(maze))
-    visual.append(displayMaze(bigMaze))
+    visual.append(displayMaze(maze, smallSteps))
+    visual.append(displayMaze(bigMaze, bigSteps))
 }
