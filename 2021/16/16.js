@@ -10,6 +10,20 @@ const emptyNode = (elem) => {
     }
 }
 
+/** @param {[string]} log */
+const displayLog = (log) => {
+    const container = document.createElement('div')
+    container.style.margin = '1em'
+    container.style.fontFamily = 'monospace'
+    container.style.fontWeight = 'bold'
+    log.forEach(s => {
+        const record = document.createElement('div')
+        record.innerText = s
+        container.append(record)
+    })
+    return container
+}
+
 const intToBin = (int) => {
     let value = int
     let response = ''
@@ -44,7 +58,7 @@ const readLiteral = (packet, startIndex) => {
     return [parseInt(value, 2), index]
 }
 
-const parseBy = (bit, number, packet, startIndex) => {
+const parseBy = (bit, number, packet, startIndex, log) => {
     let index = startIndex
     const results = []
 
@@ -53,9 +67,9 @@ const parseBy = (bit, number, packet, startIndex) => {
         () => results.length < number
     
     while (condition()) {
-        const {version, value, index: nextIndex} = consume(packet, index)
+        const {version, value, index: nextIndex} = consume(packet, index, log)
         index = nextIndex
-        results.push({version, value, nextIndex})
+        results.push({version, value, nextIndex, log})
     }
 
     return [results, index]
@@ -64,7 +78,7 @@ const parseBy = (bit, number, packet, startIndex) => {
 /**
  * @param {string} packet 
  */
-const consume = (packet, startIndex=0) => {
+const consume = (packet, startIndex, log) => {
     let index = startIndex
     const read = (count) => {
         const result = parseInt(packet.substring(index, index+count), 2)
@@ -76,7 +90,8 @@ const consume = (packet, startIndex=0) => {
 
     if (id === 4) {
         const [value, finalIndex] = readLiteral(packet, index)
-        return {version, value, index: finalIndex}
+        log.push(`Literal ${value}`)
+        return {version, value, index: finalIndex, log}
     } 
 
     const ltid = read(1)
@@ -85,7 +100,7 @@ const consume = (packet, startIndex=0) => {
         read(15) :
         read(11)
 
-    const [packs, nextIndex] = parseBy(ltid, number, packet, index)
+    const [packs, nextIndex] = parseBy(ltid, number, packet, index, log)
     index = nextIndex
     const versionSum = packs.reduce((acc, cur) => cur.version + acc, 0) + version
 
@@ -99,7 +114,20 @@ const consume = (packet, startIndex=0) => {
         7: (a, b) => a===b ? 1 : 0
     }
     const value = packs.map(p => p.value).reduce((acc, cur) => operator[id](acc, cur))
-    return {version: versionSum, value, index}
+
+    const operatorName = {
+        0: 'Sum',
+        1: 'Product',
+        2: 'Minimum',
+        3: 'Maximum',
+        5: 'Greater than?',
+        6: 'Less than?',
+        7: 'Equal to?'
+    }
+
+    log.push(`${operatorName[id]} ${packs.map(p => p.value).join(' ')} => ${value}`)
+
+    return {version: versionSum, value, index, log}
 
 }
 
@@ -108,8 +136,12 @@ solveBtn.onclick = () => {
 
     const binValue = hexIn.split('').map(hex24bin).join('')
 
-    const {version, value} = consume(binValue)
+    const {version, value, log} = consume(binValue, 0, [])
 
     solution.innerText = `Version Sum: ${version}`
     solution.innerText += `\nFinal Value: ${value}`
+
+    // Visualise - sort of
+    emptyNode(visual)
+    visual.append(displayLog(log))
 }
