@@ -12,6 +12,32 @@ const emptyNode = (elem) => {
     }
 }
 
+const displayPoints = (points, maxY, minY, maxX) => {
+    const canvas = document.createElement('canvas')
+    const width = maxX
+    const height = maxY + Math.abs(minY)
+    canvas.width = width
+    canvas.height = height
+    canvas.style.transform = 'scale(2) translate(50%,50%)'
+    canvas.style.imageRendering = 'pixelated'
+
+    /** @type {CanvasRenderingContext2D} */
+    const ctx = canvas.getContext('2d')
+
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, (maxY - 1), 2, 2)
+
+    const getColour = (i) => `hsl(${i*360/points.length}, 100%, 50%)`
+    points.forEach((arr, i) => {
+        ctx.fillStyle = getColour(i)
+        arr.forEach(([x, y]) => {
+            ctx.fillRect(x, (maxY - y), 1, 1)
+        })
+    })
+
+    return canvas
+}
+
 const getInputCorners = (inString) => {
     const [xpart, ypart] = inString.split(', ')
     const ys = ypart.split('y=')[1]
@@ -62,7 +88,7 @@ const findValidSteps = (x, y) => {
         if (xMatch) {
             const [yMatch, cy] = checkYMatch(step)
             if (yMatch) {
-                results.push([cx, cy, step])
+                results.push([cx, cy])
             }
         }
         step++
@@ -72,30 +98,39 @@ const findValidSteps = (x, y) => {
 
 const everythingValid = ({x0, x1, y0, y1}) => {
     const bigSet = new Set()
+    const visualPoints = []
+    let highestY = 0
 
     for (let x = x0; x <= x1; x++) {
         for (let y = y0; y <= y1; y++) {
             const r = findValidSteps(x, y)
-            r.forEach(([x, y]) => bigSet.add(stringify(x, y)))
+            visualPoints.push(r)
+
+            r.forEach(([x, y]) => {
+                bigSet.add(stringify(x, y))
+                if (y > highestY) highestY = y
+            })
         }
     }
 
-    return bigSet
+    return [bigSet, visualPoints, highestY]
 }
 
 solveBtn.onclick = () => {
     const targetArea = puzzleInput.value.trim()
-    // target area: x=20..30, y=-10..-5
 
     const corners = getInputCorners(targetArea)
 
     const sumRange = (min, max) => (max*(max+1) - (min-1)*min)/2
 
-    const {y0} = corners
+    const {y0, x1} = corners
     solution.innerText = `Highest Possible Shot: ${sumRange(0, Math.abs(y0+1))}`
 
-    const ev = everythingValid(corners)
+    const [ev, points, highY] = everythingValid(corners)
 
     solution.innerText += `\nTotal Possible Trajectories: ${ev.size}`
 
+    // Visualise
+    emptyNode(visual)
+    visual.append(displayPoints(points, highY, y0, x1))
 }
