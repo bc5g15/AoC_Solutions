@@ -10,6 +10,52 @@ const emptyNode = (elem) => {
     }
 }
 
+const displayTree = (arr) => {
+    const container = document.createElement('div')
+
+    const eatArr = (v, root, hue) => {
+        if (Array.isArray(v)) {
+            const nodeBlock = document.createElement('div')
+            nodeBlock.style.backgroundColor = `hsl(${hue}, 100%, 50%)`
+            nodeBlock.style.width = '100%'
+            nodeBlock.style.height = '1em'
+            nodeBlock.style.border = '1px solid black'
+            root.append(nodeBlock)
+
+            const lrcontainer = document.createElement('div')
+            lrcontainer.style.display = 'grid'
+            lrcontainer.style.gridTemplateColumns = '1fr 1fr'
+            lrcontainer.style.width = '100%'
+            root.append(lrcontainer)
+
+            const leftContainer = document.createElement('div')
+            leftContainer.style.width = '100%'
+            leftContainer.style.gridColumn = '1'
+            const rightContainer = document.createElement('div')
+            rightContainer.style.width = '100%'
+            rightContainer.style.gridColumn = '2'
+
+            lrcontainer.append(leftContainer, rightContainer)
+
+            const leftHue = hue * 1/2
+            const rightHue = hue * 3/2
+            const [l, r] = v
+            eatArr(l, leftContainer, leftHue)
+            eatArr(r, rightContainer, rightHue)
+        } else {
+            const numberBlock = document.createElement('div')
+            numberBlock.style.outline = '1px solid white'
+            numberBlock.innerText = v
+            numberBlock.style.width = '100%'
+            numberBlock.style.textAlign = 'center'
+            root.append(numberBlock)
+        }
+    }
+
+    eatArr(arr, container, 180)
+    return container
+}
+
 const findExplode = (arr, depth=0) => {
     // Anything can explode if it is four levels deep
     for (let x in arr) {
@@ -192,4 +238,7 @@ solveBtn.onclick = () => {
     }
 
     solution.innerText += `\nMaxiumum Tuple Magnitude: ${maxValue}`
+
+    emptyNode(visual)
+    visual.append(displayTree(finalList))
 }
