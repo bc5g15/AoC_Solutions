@@ -13,6 +13,121 @@ const emptyNode = (elem) => {
     }
 }
 
+const drawOcean = (beacons, scanners) => {
+    /**
+     * @param {string} type 
+     * @returns {SVGAElement}
+     */
+    const makesvg = (type) => document.createElementNS('http://www.w3.org/2000/svg', type)
+
+    let minx = 0
+    let miny = 0
+    let minz = 0
+    let maxx = 0
+    let maxy = 0
+    let maxz = 0
+    beacons.forEach(([x, y, z]) => {
+        minx = Math.min(x, minx)
+        maxx = Math.max(x, maxx)
+        miny = Math.min(y, miny)
+        maxy = Math.max(y, maxy)
+        minz = Math.min(z, minz)
+        maxz = Math.max(z, maxz)
+    })
+
+    miny -= 1000
+    maxy += 1000
+    minx -= 1000
+    maxx += 1000
+
+    const width = maxx - minx
+    const height = maxy - miny
+    const depth = maxz - minz
+
+    const container = makesvg('svg')
+    container.setAttribute('width', width)
+    container.setAttribute('height', height)
+    container.style.transform = 'translate(-40%, -40%) scale(0.2)'
+
+    const defs = makesvg('defs')
+    container.append(defs)
+
+    let grads = 0
+    const makeBoxGradient = (depthVal) => {
+        const colour = (v) => `hsl(${v*240}, 100%, 50%)`
+        const grad = makesvg('linearGradient')
+        grad.id = `grad${grads++}`
+        const start = makesvg('stop')
+        start.setAttribute('offset', '0%')
+        start.setAttribute('stop-color', colour(depthVal-1000))
+        const mid = makesvg('stop')
+        mid.setAttribute('offset', '50%')
+        mid.setAttribute('stop-color', colour(depthVal))
+        const stop = makesvg('stop')
+        stop.setAttribute('offset', '100%')
+        stop.setAttribute('stop-color', colour(depthVal+1000))
+        grad.append(start, mid, stop)
+        defs.append(grad)
+        
+        return grad.id
+    }
+
+    const circles = []
+    const scanobjects = []
+
+    beacons.forEach(([x, y, z]) => {
+        const circ = makesvg('circle')
+        circ.setAttribute('cx', x-minx)
+        circ.setAttribute('cy', y-miny)
+        circ.setAttribute('r', '1em')
+
+        const depthRatio = (z-minz)/depth
+
+        // Use z for colour 
+        circ.style.fill = `hsl(${depthRatio*240}, 100%, 50%)`
+        circ.style.stroke = 'white'
+        circ.style.strokeWidth = '.5em'
+        circles.push(circ)
+    })
+
+    scanners.forEach(([x, y, z]) => {
+        const circ = makesvg('circle')
+        circ.setAttribute('cx', x-minx)
+        circ.setAttribute('cy', y-miny)
+        circ.setAttribute('r', '2em')
+
+        const depthRatio = (z-minz)/depth
+        const colour = (v) => `hsl(${v*240}, 100%, 50%)`
+
+
+        // Z for colour again
+        circ.style.fill = colour(depthRatio)
+        circ.style.stroke = 'green'
+        circ.style.strokeWidth = '1em'
+        scanobjects.push(circ)
+
+        const cx = (x-minx)
+        const cy = (y-miny)
+
+
+        // Draw scan box area, always 2000 a side
+        const box = makesvg('rect')
+        box.setAttribute('x', cx-1000)
+        box.setAttribute('y', cy-1000)
+        box.setAttribute('width', 2000)
+        box.setAttribute('height', 2000)
+        box.style.fill = 'transparent'
+        const gradId = makeBoxGradient(depthRatio)
+        box.setAttribute('stroke', `url(#${gradId})`)
+        box.style.strokeWidth = '.5em'
+        scanobjects.push(box)
+    })
+
+    container.append(...scanobjects)
+    container.append(...circles)
+    return container
+}
+
 function intersection(setA, setB) {
     let _intersection = new Set()
     for (let elem of setB) {
@@ -169,6 +284,7 @@ solveBtn.onclick = () => {
 
     solution.innerText += `\nMax distance between scanners: ${distance}`
 
-    // 8488 - Too low
-    // 10707 - Right
+    // Visualise
+    emptyNode(visual)
+    visual.append(drawOcean(beacons, scanners))
 }
