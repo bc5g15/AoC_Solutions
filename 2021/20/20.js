@@ -53,7 +53,7 @@ const drawImage = (image, background) => {
     canvas.height = height
     canvas.style.margin = '1em'
 
-    const [forecolour, backcolour] = background === '#' ? ['black, white'] : ['white', 'black']
+    const [forecolour, backcolour] = background === '#' ? ['black', 'white'] : ['white', 'black']
 
     ctx.fillStyle = backcolour
     ctx.fillRect(0, 0, width, height)
@@ -162,6 +162,7 @@ solveBtn.onclick = () => {
     // Canvas Visualisation
     emptyNode(visual)
     visual.append(drawImage(image, '.'))
+    visual.append(drawImage(i, b))
     visual.append(drawImage(i2, b2))
     visual.append(drawImage(curImage, curBackground))
 }
