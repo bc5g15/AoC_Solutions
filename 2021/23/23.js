@@ -27,7 +27,7 @@ const charCosts = {
     'D': 1000
 }
 
-const canMove = (positions) => {
+const canMove = (positions, roomDepth) => {
     // Can only move if in the corridoor 
     // Or nothing above
     const result = []
@@ -36,8 +36,22 @@ const canMove = (positions) => {
         const [x, y] = destringify(p)
         const target = targetColumn[positions[p]]
         const char = positions[p]
+
+        if (x === target) {
+            // We can move if there is anything incorrect below
+            let legalRoom = true
+            for (let dy = y+1; dy<=y+roomDepth; dy++) {
+                const pos = stringify(x, dy)
+                if ((positions[pos] ?? char) !== char) {
+                    legalRoom = false
+                    break
+                }
+            }
+            if (legalRoom) continue
+        }
+
         // We may need to move if the wrong person is below us
-        if (x === target && (y === 3 || (y === 2 && (positions[stringify(x,3)] ?? char) === char))) continue
+        // if (x === target && (y === 3 || (y === 2 && (positions[stringify(x,3)] ?? char) === char))) continue
         // if (x === target) continue
 
         if (y === 1 || y === 2) {
@@ -51,7 +65,7 @@ const canMove = (positions) => {
     return result
 }
 
-const moveOptions = (positions, characterPos) => {
+const moveOptions = (positions, characterPos, roomDepth) => {
     // Can move to any legal unoccupied corridor position
     // Also into their destination room
     
@@ -91,21 +105,43 @@ const moveOptions = (positions, characterPos) => {
         // }
     }
 
-    const checkRoomSpace = (column) => {
-        if (column === target) {
-            // If that space is already occupied, then no
-            if (stringify(target, 2) in positions) return [false]
-            if (stringify(target, 3) in positions) {
-                // Is our neighbour the same type as us?
-                const char2 = positions[stringify(target,3)]
-                if (char2 === char) {
-                    return [true, [target, 2], 1]
-                } else {
-                    return [false]
-                }
+    const roomOccupants = (column, depth) => {
+        // console.log(column, depth, positions)
+        for (let i = depth+1; i>1; i--) {
+            const pos = stringify(column, i)
+            // console.log(pos)
+            if (pos in positions) {
+                if (positions[pos] !== char) return [false]
             } else {
-                return [true, [target, 3], 2]
+                return [true, [column, i], i-1]
             }
+        }
+    }
+
+    const checkRoomSpace = (column, depth) => {
+        if (column === target) {
+
+            // Can enter a room if it is empty
+            // Or it is the same as 
+            const [isLegal, pos, downstep] = roomOccupants(column, depth)
+            if (isLegal) return [true, pos, downstep]
+            return [false]
+            // Otherwise can enter if it is only occupied by 
+            // others of the same character
+
+            // If that space is already occupied, then no
+            // if (stringify(target, 2) in positions) return [false]
+            // if (stringify(target, 3) in positions) {
+            //     // Is our neighbour the same type as us?
+            //     const char2 = positions[stringify(target,3)]
+            //     if (char2 === char) {
+            //         return [true, [target, 2], 1]
+            //     } else {
+            //         return [false]
+            //     }
+            // } else {
+            //     return [true, [target, 3], 2]
+            // }
         }
         return [false]
     }
@@ -122,7 +158,7 @@ const moveOptions = (positions, characterPos) => {
                 results.push([position, initialCost+Math.abs(x-c)])
             }
             if (rooms.includes(c)) {
-                const [legal, position, downstep] = checkRoomSpace(c)
+                const [legal, position, downstep] = checkRoomSpace(c, roomDepth)
                 // Illegal room moves don't break progress
                 if (legal) {
                     results.push([position, initialCost+Math.abs(x-c)+downstep])
@@ -155,39 +191,49 @@ const geth = (positions) => {
     return result
 }
 
-const posString = (positions) => {
+const posString = (positions, depth) => {
     let finalString = ''
     const roomSpaces = [3,5,7,9]
     for (let i=1; i<=11; i++) {
         finalString += (positions[stringify(i, 1)] ?? '.')
         if (roomSpaces.includes(i)) {
-            finalString += (positions[stringify(i, 2)] ?? '.')
-            finalString += (positions[stringify(i, 3)] ?? '.')
+            for (let j = 2; j<=depth+1; j++) {
+                finalString += (positions[stringify(i, j)] ?? '.')
+            }
+            // finalString += (positions[stringify(i, 2)] ?? '.')
+            // finalString += (positions[stringify(i, 3)] ?? '.')
         }
     }
     return finalString
 }
 
-const search = (positions) => {
+const search = (positions, roomDepth=2) => {
     const nodes = [{positions, cost: 0, h: geth(positions), moves: ''}]
     const seen = new Set()
 
     let curNode = nodes[0]
     // let h = 1
+    let minH = Infinity
     while (nodes.length > 0) {
         curNode = nodes.shift()
-        if (curNode.h === 0) return curNode
-        const nodeString = posString(curNode.positions)
-        if (seen.has(nodeString)) continue
-        seen.add(nodeString)
 
-        if (Object.keys(curNode.positions).length !== 8) {
+        if (curNode.h < minH) {
+            minH = curNode.h
             console.log(curNode)
         }
 
-        const movable = canMove(curNode.positions)
+        if (curNode.h === 0) return curNode
+        const nodeString = posString(curNode.positions, roomDepth)
+        if (seen.has(nodeString)) continue
+        seen.add(nodeString)
+
+        // if (Object.keys(curNode.positions).length !== 8) {
+        //     console.log(curNode)
+        // }
+
+        const movable = canMove(curNode.positions, roomDepth)
         movable.forEach(m => {
-            const options = moveOptions(curNode.positions, m)
+            const options = moveOptions(curNode.positions, m, roomDepth)
             const char = curNode.positions[m]
             options.forEach(([pos, moveCost]) => {
                 const index = stringify(pos[0], pos[1])
@@ -224,12 +270,39 @@ solveBtn.onclick = () => {
     // Corridor goes from '2,1' to '2,11'
 
     console.log(characters)
-    const movable = canMove(characters)
-    console.log(canMove(characters))
+    const movable = canMove(characters, 2)
+    console.log(canMove(characters, 2))
 
-    console.table(moveOptions(characters, movable[0]))
+    console.table(moveOptions(characters, movable[0], 2))
     // console.table(moveOptions(characters, movable[1]))
     // console.table(moveOptions(characters, movable[2]))
 
-    console.log(search(characters))
+    // console.log(search(characters))
+    const p1node = search(characters)
+    console.log(p1node)
+
+    solution.innerText = `2 Depth Rooms: ${p1node.cost}`
+
+    // Part 2
+
+    // Build up the second character map
+    const char2 = {
+        '3,2': 'D',
+        '3,3': 'D',
+        '5,2': 'C',
+        '5,3': 'B',
+        '7,2': 'B',
+        '7,3': 'A',
+        '9,2': 'A',
+        '9,3': 'C'
+    }
+    for (let pos in characters) {
+        const [x, y] = destringify(pos)
+        //y positions of 3 become 5
+        if (y===3) {
+            char2[stringify(x,y+2)] = characters[pos]
+        }
+    }
+
+    console.log(search(char2, 4))
 }
