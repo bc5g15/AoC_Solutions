@@ -13,6 +13,24 @@ const emptyNode = (elem) => {
     }
 }
 
+const draw = (blocks) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 300
+    canvas.height = 300
+    /** @type {CanvasRenderingContext2D} */
+    const ctx = canvas.getContext('2d')
+
+    ctx.fillStyle = 'rgba(255, 255, 255, .1)'
+    console.log(blocks)
+
+    for (let b of blocks) {
+        const [x, y, z] = destringify(b)
+        ctx.fillRect(x+z+100, y+z+100, 1, 1)
+    }
+
+    return canvas
+}
+
 const supaslow = (ranges) => {
     const active = new Set()
     for (const {trip, xs, ys, zs} of ranges) {
@@ -207,7 +225,9 @@ solveBtn.onclick = () => {
         && zs[0] > -51 && zs[1] < 51
     })
 
-    const slowAnswer = supaslow(p1Ranges).size
+    const slowBlocks = supaslow(p1Ranges)
+
+    const slowAnswer = slowBlocks.size
 
     const fastAnswer = rangeTotalSum(fullResolve(p1Ranges))
     
@@ -217,4 +237,7 @@ solveBtn.onclick = () => {
 
     const r2 = rangeTotalSum(fullResolve(ranges))
     solution.innerText += `\nWithin Full Range: ${r2}`
+
+    emptyNode(visual)
+    visual.append(draw(slowBlocks))
 }
