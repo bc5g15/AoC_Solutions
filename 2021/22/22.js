@@ -20,11 +20,9 @@ const draw = (blocks) => {
     /** @type {CanvasRenderingContext2D} */
     const ctx = canvas.getContext('2d')
 
-    ctx.fillStyle = 'rgba(255, 255, 255, .1)'
-    console.log(blocks)
-
     for (let b of blocks) {
         const [x, y, z] = destringify(b)
+        ctx.fillStyle = `hsla(${z * 360/50}, 100%, 50%, .1)`
         ctx.fillRect(x+z+100, y+z+100, 1, 1)
     }
 
