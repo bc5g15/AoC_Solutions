@@ -3,6 +3,9 @@ const solveBtn = document.getElementById('solvepuzzle')
 const solution = document.getElementById('solutionoutput')
 const visual = document.getElementById('visual')
 
+const debugInput = document.getElementById('debuginput')
+const debugButton = document.getElementById('solvedebug')
+
 const stringify = (x,y) => `${x},${y}`
 const destringify = (s) => s.split(',').map(v => parseInt(v, 10))
 
@@ -12,6 +15,8 @@ const emptyNode = (elem) => {
         elem.removeChild(elem.firstChild)
     }
 }
+
+const MinHeap={siftDown(h,i=0,v=h[i]){if(i<h.length){let k=v[0];while(1){let j=i*2+1;if(j+1<h.length&&h[j][0]>h[j+1][0])j++;if(j>=h.length||k<=h[j][0])break;h[i]=h[j];i=j;}h[i]=v}},heapify(h){for(let i=h.length>>1;i--;)this.siftDown(h,i);return h},pop(h){return this.exchange(h,h.pop())},exchange(h,v){if(!h.length)return v;let w=h[0];this.siftDown(h,0,v);return w},push(h,v){let k=v[0],i=h.length,j;while((j=(i-1)>>1)>=0&&k<h[j][0]){h[i]=h[j];i=j}h[i]=v;return h}}; // prettier-ignore
 
 const targetColumn = {
     'A': 3,
@@ -111,7 +116,10 @@ const moveOptions = (positions, characterPos, roomDepth) => {
             const pos = stringify(column, i)
             // console.log(pos)
             if (pos in positions) {
-                if (positions[pos] !== char) return [false]
+                if (positions[pos] !== char) {
+                    // console.log(`Bad position ${pos}`)
+                    return [false]
+                }
             } else {
                 return [true, [column, i], i-1]
             }
@@ -148,7 +156,8 @@ const moveOptions = (positions, characterPos, roomDepth) => {
 
     const forStates = [[x-1,(c)=>c>=1, -1], [x+1, (c)=>c<=10, 1]]
 
-    forStates.forEach(([init, cond, inc]) => {
+    // forStates.forEach(([init, cond, inc]) => {
+    for (let [init, cond, inc] of forStates){
         for (let c = init; cond(c); c=c+inc) {
             if (legalColumns.includes(c)){
                 const [legal, position] = checkCorridorSpace(c)
@@ -161,11 +170,12 @@ const moveOptions = (positions, characterPos, roomDepth) => {
                 const [legal, position, downstep] = checkRoomSpace(c, roomDepth)
                 // Illegal room moves don't break progress
                 if (legal) {
-                    results.push([position, initialCost+Math.abs(x-c)+downstep])
+                    return [[position, initialCost+Math.abs(x-c)+downstep]]
+                    // results.push([position, initialCost+Math.abs(x-c)+downstep])
                 }
             }
         }
-    })
+    }
 
     // Check left
     // for (let c = x-1; c>=1; c--) {
@@ -219,7 +229,7 @@ const search = (positions, roomDepth=2) => {
 
         if (curNode.h < minH) {
             minH = curNode.h
-            console.log(curNode)
+            // console.log(curNode)
         }
 
         if (curNode.h === 0) return curNode
@@ -257,6 +267,70 @@ const search = (positions, roomDepth=2) => {
     return curNode
 }
 
+const searchWithHeap = (positions, roomDepth = 2) => {
+    const nodes = [[0, positions, Infinity, '']]
+    const seen = new Map()
+
+    let currentNode = nodes[0]
+    while (nodes.length) {
+        currentNode = MinHeap.pop(nodes)
+
+        const [cost, currentPositions, h, moveString] = currentNode
+
+        if (h === 0) return currentNode
+        const nodeString = posString(currentPositions, roomDepth)
+        // Error check
+        // console.log(nodeString)
+        // if (nodeString.split('').filter(c => c==='A').length !== roomDepth) return [currentNode, nodeString]
+        // console.log(nodeString)
+        if (seen.has(nodeString) && seen.get(nodeString) <= cost) continue
+        // if (seen.has(nodeString)) continue
+        seen.set(nodeString, cost)
+
+        const movable = canMove(currentPositions, roomDepth)
+        // console.log(movable)
+        movable.forEach(move => {
+            const options = moveOptions(currentPositions, move, roomDepth)
+            const character = currentPositions[move]
+            options.forEach(([position, moveCost]) => {
+                const index = stringify(position[0], position[1])
+                const fullCost = charCosts[character] * moveCost
+                const newPosition = {...currentPositions}
+                newPosition[index] = character
+                delete newPosition[move]
+                MinHeap.push(nodes, [cost+fullCost, newPosition, 
+                    geth(newPosition),
+                    moveString + '|' + character + move + '-' + index
+                ])
+
+                    // moves: curNode.moves + '|' + char + m +'-' +index})
+
+            })
+        })
+        // console.log(nodes.length)
+        // return nodes
+    }
+    // console.log(seen)
+    return currentNode
+}
+
+const drawState = (state) => {
+    const container = document.createElement('div')
+    container.style.display = 'grid'
+    for(const position in state) {
+        const [x, y] = destringify(position)
+        const cell = document.createElement('div')
+        cell.style.outline = '1px solid white'
+        cell.style.width = '1em'
+        cell.style.height = '1em'
+        cell.innerText = state[position]
+        cell.style.gridRow = y
+        cell.style.gridColumn = x
+        container.append(cell)
+    }
+    return container
+}
+
 solveBtn.onclick = () => {
     const characters = {}
     puzzleInput.value.trim().split('\n').forEach((row, i) => {
@@ -278,31 +352,126 @@ solveBtn.onclick = () => {
     // console.table(moveOptions(characters, movable[2]))
 
     // console.log(search(characters))
-    const p1node = search(characters)
-    console.log(p1node)
+    // const p1node = search(characters)
+    // console.log(p1node)
 
-    solution.innerText = `2 Depth Rooms: ${p1node.cost}`
+    // solution.innerText = `2 Depth Rooms: ${p1node.cost}`
+
+    console.log(searchWithHeap(characters))
 
     // Part 2
 
     // Build up the second character map
     const char2 = {
-        '3,2': 'D',
         '3,3': 'D',
-        '5,2': 'C',
-        '5,3': 'B',
-        '7,2': 'B',
-        '7,3': 'A',
-        '9,2': 'A',
-        '9,3': 'C'
+        '3,4': 'D',
+        '5,3': 'C',
+        '5,4': 'B',
+        '7,3': 'B',
+        '7,4': 'A',
+        '9,3': 'A',
+        '9,4': 'C'
     }
     for (let pos in characters) {
         const [x, y] = destringify(pos)
         //y positions of 3 become 5
         if (y===3) {
             char2[stringify(x,y+2)] = characters[pos]
+        } else {
+            char2[pos] = characters[pos]
         }
     }
 
-    console.log(search(char2, 4))
+
+    // const altMap = puzzleInput.ariaValueMax.trim().split('\n')
+    // const part2Map = altMap.slice(0, 3)
+    //     .concat("  #D#C#B#A#  ", "  #D#B#A#C#  ")
+    //     .concat(altMap.slice(3))
+
+    // console.log(search(char2, 4))
+    console.log(characters)
+    console.log(char2)
+    // console.log(searchWithHeap(char2, 4))
+
+    console.log(canMove(char2, 4))
+
+    // const mv = canMove(char2, 4)
+    // mv.forEach(move => {
+    //     console.log(move)
+    //     const options = moveOptions(char2, move, 4)
+    //     console.log(options)
+    // })
+
+    // const movable = canMove(currentPositions, roomDepth)
+    //     // console.log(movable)
+    //     movable.forEach(move => {
+    //         const options = moveOptions(currentPositions, move, roomDepth)
+
+    const [cost, pos, h, moves] = searchWithHeap(char2, 4)
+    console.log(pos)
+    console.log(moves)
+
+    console.log(canMove(pos, 4))
+
+    emptyNode(visual)
+    visual.append(drawState(pos))
 }
+
+debugButton.onclick = () => {
+    // Accept input as is so I can go through the worked example
+    const characters = {}
+    debugInput.value.trim().split('\n').forEach((row, i) => {
+        row.split('').forEach((char, j) => {
+            if (!['.','#',' '].includes(char)) {
+                characters[stringify(j, i)] = char
+            }
+        })
+    })
+
+    const choices = []
+    const mv = canMove(characters, 4)
+    mv.forEach(move => {
+        const options = moveOptions(characters, move, 4)
+        const character = characters[move]
+        options.forEach(([position, moveCost]) => {
+            // Move cost seems to be irrelevant here for some reason
+            const index = stringify(position[0], position[1])
+            const newPosition = {...characters}
+            newPosition[index] = character
+            delete newPosition[move]
+            choices.push(newPosition)
+        })
+    })
+
+    choices.forEach(c => {
+        console.log(c)
+        console.log(searchWithHeap(c, 4))
+    })
+
+
+    // const movable = canMove(currentPositions, roomDepth)
+    // // console.log(movable)
+    // movable.forEach(move => {
+    //     const options = moveOptions(currentPositions, move, roomDepth)
+    //     const character = currentPositions[move]
+    //     options.forEach(([position, moveCost]) => {
+    //         const index = stringify(position[0], position[1])
+    //         const fullCost = charCosts[character] * moveCost
+    //         const newPosition = {...currentPositions}
+    //         newPosition[index] = character
+    //         delete newPosition[move]
+    //         MinHeap.push(nodes, [cost+fullCost, newPosition, 
+    //             geth(newPosition),
+    //             moveString + '|' + character + move + '-' + index
+    //         ])
+
+    //             // moves: curNode.moves + '|' + char + m +'-' +index})
+
+    //     })
+    // })
+
+
+    // console.log(searchWithHeap(characters, 4))
+}
+
+// |C5,2-4,1|C4,1-2,1|C5,3-6,1|C2,1-1,1|B5,4-2,1|C6,1-4,1|D5,5-8,1|D8,1-10,1|B7,2-5,5|B7,3-5,4|C4,1-6,1|A7,4-8,1|B3,2-5,3|C6,1-7,4|B2,1-5,2|A8,1-2,1|D3,3-4,1|D4,1-6,1|D6,1-8,1|A2,1-6,1|C1,1-4,1|D3,4-2,1|D2,1-1,1|C4,1-2,1|A6,1-3,4|D8,1-6,1|D10,1-8,1|D6,1-4,1|D8,1-6,1|D6,1-10,1
